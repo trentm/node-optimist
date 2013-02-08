@@ -1,7 +1,7 @@
 {
-    "name" : "optimist",
+    "name" : "pessimist",
     "version" : "0.3.5",
-    "description" : "Light-weight option parsing with an argv hash. No optstrings attached.",
+    "description" : "Light-weight fork of 'optimist' for option parsing.",
     "main" : "./index.js",
     "directories" : {
         "lib" : ".",
@@ -20,7 +20,7 @@
     },
     "repository" : {
         "type" : "git",
-        "url" : "http://github.com/substack/node-optimist.git"
+        "url" : "http://github.com/trentm/node-optimist.git#pessimist"
     },
     "keywords" : [
         "argument",

@@ -1,3 +1,21 @@
+optimist^H pessimist
+====================
+
+This is trentm's fork of substack/node-optimist. Pessimist is a node.js
+library for option parsing for people who like optimist, but are a
+little retentive than substack. Basically I'm making some
+tweaks. Install it:
+
+    npm install pessimist
+
+Tweaks:
+
+- Don't add '[...]' markers for type, default, and required in
+  option help strings. The `self.favors` object allows a way to
+  get these back. TODO: expose an API to set those appropriately.
+
+
+
 optimist
 ========
 
