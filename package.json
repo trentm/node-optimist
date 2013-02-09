@@ -36,6 +36,10 @@
         "email" : "mail@substack.net",
         "url" : "http://substack.net"
     },
+    "contributors" : {
+        "name" : "Trent Mick",
+        "url" : "http://trentm.com"
+    },
     "license" : "MIT/X11",
     "engine" : {
         "node" : ">=0.4"
