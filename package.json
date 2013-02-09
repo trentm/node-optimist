@@ -18,6 +18,7 @@
     "scripts" : {
         "test" : "tap ./test/*.js"
     },
+    "homepage": "https://github.com/trentm/node-optimist/tree/pessimist",
     "repository" : {
         "type" : "git",
         "url" : "http://github.com/trentm/node-optimist.git#pessimist"
