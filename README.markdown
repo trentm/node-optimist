@@ -36,7 +36,22 @@ tweaks. Install it:
         $ node foo.js -vv
         { _: [], '$0': 'node ./foo.js', v: [ true, true ] }
 
-- TODO `.strict()` to error on non-defined option usage.
+- Add `.strict()` to error on usage of undefined options:
+
+        $ cat foo.js
+        var argv = require('pessimist')
+            .boolean('v')
+            .strict()
+            .argv;
+        console.log(argv);
+
+        $ node foo.js -v
+        { _: [], '$0': 'node ./foo.js', v: true }
+
+        $ node foo.js -x
+
+        Error: illegal option: "x"
+        ...
 
 
 ## `pessmist.Argv.favors`

@@ -42,6 +42,8 @@ function Argv (args, cwd) {
         );
     }
 
+    var definedOpts = {};
+
     var flags = { bools : {}, arraysOfBool : {}, strings : {} };
 
     self.boolean = function (bools) {
@@ -51,6 +53,7 @@ function Argv (args, cwd) {
 
         bools.forEach(function (name) {
             flags.bools[name] = true;
+            definedOpts[name] = true;
         });
 
         return self;
@@ -63,6 +66,7 @@ function Argv (args, cwd) {
 
         aobs.forEach(function (name) {
             flags.arraysOfBool[name] = true;
+            definedOpts[name] = true;
         });
 
         return self;
@@ -75,6 +79,7 @@ function Argv (args, cwd) {
 
         strings.forEach(function (name) {
             flags.strings[name] = true;
+            definedOpts[name] = true;
         });
 
         return self;
@@ -93,6 +98,8 @@ function Argv (args, cwd) {
             });
         }
         else {
+            definedOpts[x] = true;
+            definedOpts[y] = true;
             var zs = (aliases[x] || []).concat(aliases[y] || []).concat(x, y);
             aliases[x] = zs.filter(function (z) { return z != x });
             aliases[y] = zs.filter(function (z) { return z != y });
@@ -113,6 +120,7 @@ function Argv (args, cwd) {
             });
         }
         else {
+            definedOpts[keys] = true;
             demanded[keys] = true;
         }
 
@@ -154,6 +162,7 @@ function Argv (args, cwd) {
             });
         }
         else {
+            definedOpts[key] = true;
             defaults[key] = value;
         }
 
@@ -168,6 +177,7 @@ function Argv (args, cwd) {
             });
         }
         else {
+            definedOpts[key] = true;
             descriptions[key] = desc;
         }
         return self;
@@ -184,6 +194,7 @@ function Argv (args, cwd) {
             });
         }
         else {
+            definedOpts[key] = true;
             if (opt.alias) self.alias(key, opt.alias);
             if (opt.demand) self.demand(key);
             if (typeof opt.default !== 'undefined') {
@@ -212,6 +223,12 @@ function Argv (args, cwd) {
     var wrap = null;
     self.wrap = function (cols) {
         wrap = cols;
+        return self;
+    };
+
+    var strict = false;
+    self.strict = function () {
+        strict = true;
         return self;
     };
 
@@ -479,6 +496,16 @@ function Argv (args, cwd) {
                 delete argv[key];
             }
         });
+
+        if (strict) {
+            Object.keys(argv).forEach(function (key) {
+                if (key === '_' || key === '$0')
+                    return;
+                if (!definedOpts[key]) {
+                    throw new Error('illegal option: "' + key + '"');
+                }
+            });
+        }
 
         checks.forEach(function (f) {
             try {
