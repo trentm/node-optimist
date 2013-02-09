@@ -1,5 +1,6 @@
 var path = require('path');
 var wordwrap = require('wordwrap');
+var warn = console.warn;
 
 /*  Hack an instance of Argv with process.argv into Argv
     so people can do
@@ -41,7 +42,7 @@ function Argv (args, cwd) {
         );
     }
 
-    var flags = { bools : {}, strings : {} };
+    var flags = { bools : {}, arraysOfBool : {}, strings : {} };
 
     self.boolean = function (bools) {
         if (!Array.isArray(bools)) {
@@ -50,6 +51,18 @@ function Argv (args, cwd) {
 
         bools.forEach(function (name) {
             flags.bools[name] = true;
+        });
+
+        return self;
+    };
+
+    self.arrayOfBoolean = function (aobs) {
+        if (!Array.isArray(aobs)) {
+            aobs = [].slice.call(arguments);
+        }
+
+        aobs.forEach(function (name) {
+            flags.arraysOfBool[name] = true;
         });
 
         return self;
@@ -121,6 +134,7 @@ function Argv (args, cwd) {
     };
 
     function fail (msg) {
+        // TODO(pessimist): process.exit is too heavy. Exception instead.
         self.showHelp();
         if (msg) console.error(msg);
         process.exit(1);
@@ -178,6 +192,9 @@ function Argv (args, cwd) {
 
             if (opt.boolean || opt.type === 'boolean') {
                 self.boolean(key);
+            }
+            if (opt.arrayOfBoolean || opt.type === 'arrayOfBoolean') {
+                self.arrayOfBoolean(key);
             }
             if (opt.string || opt.type === 'string') {
                 self.string(key);
@@ -260,6 +277,7 @@ function Argv (args, cwd) {
 
             if (self.favors.helpType) {
                 if (flags.bools[key]) type = '[boolean]';
+                if (flags.arraysOfBool[key]) type = '[boolean]';
                 if (flags.strings[key]) type = '[string]';
             }
 
@@ -315,17 +333,38 @@ function Argv (args, cwd) {
         Object.keys(flags.bools).forEach(function (key) {
             setArg(key, defaults[key] || false);
         });
+        Object.keys(flags.arraysOfBool).forEach(function (key) {
+            setArg(key, defaults[key] || [] );
+        });
 
         function setArg (key, val) {
             var num = Number(val);
             var value = typeof val !== 'string' || isNaN(num) ? val : num;
-            if (flags.strings[key]) value = val;
+
+            if (flags.strings[key]) {  //XXX should this check aliases?
+                if (typeof(val) === 'boolean') {
+                    throw new Error('illegal use of "' + key + '" option');
+                }
+                value = val;
+            }
 
             setKey(argv, key.split('.'), value);
 
             (aliases[key] || []).forEach(function (x) {
                 argv[x] = argv[key];
             });
+        }
+
+        function isBool (key) {
+            return (flags.bools[key]
+                || (aliases[key] && flags.bools[aliases[key]])
+                || flags.arraysOfBool[key]
+                || (aliases[key] && flags.arraysOfBool[aliases[key]]));
+        }
+
+        function isString (key) {
+            return (flags.strings[key]
+                || (aliases[key] && flags.strings[aliases[key]]));
         }
 
         for (var i = 0; i < args.length; i++) {
@@ -346,15 +385,18 @@ function Argv (args, cwd) {
             else if (arg.match(/^--.+/)) {
                 var key = arg.match(/^--(.+)/)[1];
                 var next = args[i + 1];
-                if (next !== undefined && !next.match(/^-/)
-                && !flags.bools[key]
-                && (aliases[key] ? !flags.bools[aliases[key]] : true)) {
+                if (next !== undefined && !next.match(/^-/) && !isBool(key)) {
                     setArg(key, next);
                     i++;
                 }
-                else if (/^(true|false)$/.test(next)) {
+                else if (self.favors.trueFalseBool
+                         && /^(true|false)$/.test(next)) {
                     setArg(key, next === 'true');
                     i++;
+                }
+                else if (isString(key)) {
+                    throw new Error('no argument provided for "' + key
+                        + '" option');
                 }
                 else {
                     setArg(key, true);
@@ -378,15 +420,19 @@ function Argv (args, cwd) {
                 if (!broken) {
                     var key = arg.slice(-1)[0];
 
-                    if (args[i+1] && !args[i+1].match(/^-/)
-                    && !flags.bools[key]
-                    && (aliases[key] ? !flags.bools[aliases[key]] : true)) {
+                    if (args[i+1] && !args[i+1].match(/^-/) && !isBool(key)) {
                         setArg(key, args[i+1]);
                         i++;
                     }
-                    else if (args[i+1] && /true|false/.test(args[i+1])) {
+                    else if (self.favors.trueFalseBool
+                        && args[i+1] && /true|false/.test(args[i+1]))
+                    {
                         setArg(key, args[i+1] === 'true');
                         i++;
+                    }
+                    else if (isString(key)) {
+                        throw new Error('no argument provided for "' + key
+                            + '" option');
                     }
                     else {
                         setArg(key, true);
@@ -422,6 +468,17 @@ function Argv (args, cwd) {
         if (missing.length) {
             fail('Missing required arguments: ' + missing.join(', '));
         }
+
+        // Options of type `arrayOfBoolean`: if none given, set undefined
+        // instead of the empty array so they are false-y.
+        Object.keys(flags.arraysOfBool).forEach(function (key) {
+            if (argv[key] && argv[key].length === 0) {
+                (aliases[key] || []).forEach(function (a) {
+                    delete argv[a];
+                })
+                delete argv[key];
+            }
+        });
 
         checks.forEach(function (f) {
             try {

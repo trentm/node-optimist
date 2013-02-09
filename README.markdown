@@ -1,5 +1,4 @@
-optimist^H pessimist
-====================
+# optimist^H pessimist
 
 This is trentm's fork of substack/node-optimist. Pessimist is a node.js
 library for option parsing for people who like optimist, but are a
@@ -8,11 +7,56 @@ tweaks. Install it:
 
     npm install pessimist
 
-Tweaks:
+## Tweaks
 
 - Don't add '[...]' markers for type, default, and required in
   option help strings. The `self.favors` object allows a way to
   get these back. TODO: expose an API to set those appropriately.
+
+- Hide "boolean option takes literal true/false argument" surprise behind
+  `favors.trueFalseBool`.
+
+- Correct handling of 'string' options: they must have a provided argument.
+  With the old behaviour you could get this: Say '-f' is type:string, then
+  '-fvv' will return f:true. That's just wrong. That should be an error.
+  Now it *is* an error.
+
+- Support for `arrayOfBool` option type to allow counting multiple uses of
+  a boolean option. E.g.:
+
+        var argv = require('pessimist').arrayOfBoolean('v').argv;
+        console.log(argv);
+
+  results in:
+
+        $ node foo.js
+        { _: [], '$0': 'node ./foo.js' }
+        $ node foo.js -v
+        { _: [], '$0': 'node ./foo.js', v: [ true ] }
+        $ node foo.js -vv
+        { _: [], '$0': 'node ./foo.js', v: [ true, true ] }
+
+- TODO `.strict()` to error on non-defined option usage.
+
+
+## `pessmist.Argv.favors`
+
+A pessmist `Argv` parser has a `favors` object. This is empty by default.
+Set the following keys to true to get the associated favor:
+
+- `favors.trueFalseBool` This will enable a "boolean" type option taking
+  a string argument that is a literal "true" or "false". Personally this is
+  surprising behaviour. If I have a '-v' boolean and my tool takes an
+  argument that *could* be the string "false", then this won't do what you
+  expect:
+
+        node foo.js -v false   # 'v' will be false and args will be empty!
+
+- `favors.helpRequired`
+
+- `favors.helpDefault`
+
+- `favors.helpType`
 
 
 
@@ -51,7 +95,7 @@ else {
 
     $ ./xup.js --rif=55 --xup=9.52
     Buy more riffiwobbles
-    
+
     $ ./xup.js --rif 12 --xup 8.1
     Sell the xupptumblers
 
@@ -59,7 +103,7 @@ else {
 
 But wait! There's more! You can do short options:
 -------------------------------------------------
- 
+
 short.js:
 
 ````javascript
@@ -95,7 +139,7 @@ console.log(
 
     $ ./bool.js -s
     The cat says: meow
-    
+
     $ ./bool.js -sp
     The cat says: meow.
 
@@ -104,7 +148,7 @@ console.log(
 
 And non-hypenated options too! Just use `argv._`!
 -------------------------------------------------
- 
+
 nonopt.js:
 
 ````javascript
@@ -119,7 +163,7 @@ console.log(argv._);
     $ ./nonopt.js -x 6.82 -y 3.35 moo
     (6.82,3.35)
     [ 'moo' ]
-    
+
     $ ./nonopt.js foo -x 0.54 bar -y 1.12 baz
     (0.54,1.12)
     [ 'foo', 'bar', 'baz' ]
@@ -140,10 +184,10 @@ console.log(argv.x / argv.y);
 ````
 
 ***
- 
+
     $ ./divide.js -x 55 -y 11
     5
-    
+
     $ node ./divide.js -x 4.91 -z 2.51
     Usage: node ./divide.js -x [num] -y [num]
 
@@ -269,10 +313,10 @@ s.on('end', function () {
 
     Missing required arguments: f
 
-    $ node line_count.js --file line_count.js 
+    $ node line_count.js --file line_count.js
     20
-    
-    $ node line_count.js -f line_count.js 
+
+    $ node line_count.js -f line_count.js
     20
 
 methods
@@ -488,14 +532,14 @@ installation
 
 With [npm](http://github.com/isaacs/npm), just do:
     npm install optimist
- 
+
 or clone this project on github:
 
     git clone http://github.com/substack/node-optimist.git
 
 To run the tests with [expresso](http://github.com/visionmedia/expresso),
 just do:
-    
+
     expresso
 
 inspired By
