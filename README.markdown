@@ -1,5 +1,9 @@
 # optimist^H pessimist
 
+**WARNING: Don't use this fork or the `pessimist` npm module anymore.
+I'm not maintaining it. I've moved on to a new option processing
+library: [dashdash](https://github.com/trentm/node-dashdash).**
+
 This is trentm's fork of substack/node-optimist. Pessimist is a node.js
 library for option parsing for people who like optimist, but are a
 little retentive than substack. Basically I'm making some
